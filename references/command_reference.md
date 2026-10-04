@@ -143,3 +143,49 @@ thothctl workflow devsecops --phase monitor
 thothctl workflow devsecops --phase pre-deploy --enforcement hard
 thothctl workflow devsecops --phase all
 ```
+
+---
+
+## Writing READMEs that survive `thothctl_document_iac`
+
+`thothctl_document_iac` runs `terraform-docs`, which manages a generated block
+delimited by HTML comment markers:
+
+```
+<!-- BEGIN_TF_DOCS -->
+... terraform-docs generated tables (requirements, providers, inputs, outputs, graph) ...
+<!-- END_TF_DOCS -->
+```
+
+terraform-docs is configured in **inject** mode: it only replaces the content
+**between** these two markers and leaves everything else in the file untouched.
+
+To avoid losing AI-authored content, follow these rules whenever you create or
+edit a `README.md` in a Terraform/Terragrunt directory:
+
+1. **Always include the markers** where the generated reference tables should
+   appear (typically at the bottom, under a `## Reference` heading). Place an
+   empty line between the two markers:
+
+   ```markdown
+   # <Module/Project Title>
+
+   <AI-authored overview, architecture, usage examples, design decisions>
+
+   ## Reference
+
+   <!-- BEGIN_TF_DOCS -->
+
+   <!-- END_TF_DOCS -->
+   ```
+
+2. **Never put hand-written prose between the markers.** Anything there is
+   overwritten on the next `thothctl_document_iac` run. Keep prose above
+   `<!-- BEGIN_TF_DOCS -->` or below `<!-- END_TF_DOCS -->`.
+
+3. **Order of operations:** write the README first (with markers), then run
+   `thothctl_document_iac`. If the README has no markers, terraform-docs appends
+   the generated block to the end of the file instead of injecting in place.
+
+4. Re-running `thothctl_document_iac` is safe and idempotent: it updates only
+   the block between the markers, so AI prose persists across regenerations.
